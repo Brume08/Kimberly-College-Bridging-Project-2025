@@ -30,12 +30,17 @@ def check_for_new_orders():
                 frame = tab.create_frame(rowspan=1, columnspan=5, row=orderID+1, column=0,
                                 isOrder=True,
                                 labelText=f"Order ID: {newdata['orders'][orderID]}",
+                                labelVar=f"{newdata['orders'][orderID]}",
                                 labelrow=2, labelcolumn=0, labelrowspan=1,
                                 labelcolumnspan=1, labelfontsize=15, labelFont="Arial",
                                 buttonText="Fulfill", buttonrow=2,
                                 buttoncolumn=4)
-                
-                currentOrderFrames[orderID] = frame
+
+                order_id = newdata['orders'][orderID]
+                if newdata.get(f"{order_id} Progress") == "Completed":
+                    tab.window.after(5000, frame.destroy)
+                else:   
+                    currentOrderFrames[orderID] = frame
 
         tab.window.after(5000, check_for_new_orders)
 
@@ -45,4 +50,3 @@ check_for_new_orders()
 
 
 tab.window.mainloop()
-
