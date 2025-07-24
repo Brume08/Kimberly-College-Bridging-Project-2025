@@ -42,6 +42,8 @@ class Window:  # Define a class that creates windows
         data['orders'].append(orderID)
 
         data[f'{orderID}'] = []
+
+        data[f'{orderID} Progress'] = 'In Progress'
         
         for item in self.addedItems:
             data[f'{orderID}'].append(item)
@@ -49,7 +51,49 @@ class Window:  # Define a class that creates windows
         with open(filename, "w") as file:
             json.dump(data, file, indent=2)
 
+    def fulfill_window(self, filename, orderID):
+        currentval = IntVar(value=0)
+        checklist = Toplevel()
+
+        with open(filename, "r") as file:
+            data = json.load(file)
+
+        item_vars = []
+
         
+        for i, item_text in enumerate(data[orderID]):
+            var = IntVar(value=0)
+            cb = Checkbutton(
+                checklist,
+                text=item_text,
+                variable=var,
+                onvalue=1,
+                offvalue=0,
+                command=lambda: update_total()
+            )
+            cb.grid(row=0, column=i)
+            item_vars.append(var)
+
+        finishButton = Button(checklist, text="Finish", state="disabled", command=lambda: complete_order())
+        finishButton.grid(row=1, column=len(data[orderID]) // 2)
+
+        def update_total():
+            checked = sum(var.get() for var in item_vars)
+            if checked == len(item_vars):
+                finishButton.config(state="normal", bg="black", fg="white")
+            else:
+                finishButton.config(state="disabled", bg="SystemButtonFace", fg="black")
+
+        def complete_order():
+        
+            del data[orderID]
+            
+            data[f"{orderID} Progress"] = "Completed"
+
+            with open(filename, "w") as file:
+                json.dump(data, file, indent=2)
+
+            checklist.destroy()
     
     def add_item(self, name, price):
         message = Toplevel()
@@ -134,7 +178,7 @@ class Window:  # Define a class that creates windows
                      isimage=False, imageDir="", imagerow=0, imagecolumn=0,
                      imagerowspan=1, imagecolumnspan=1, ismenuitems=False,
                      menuitemamount=1, ismenufooter=False, isOrder=False,
-                     labelText="", labelrow=0, labelcolumn=0, labelrowspan=1,
+                     labelText="", labelVar="", labelrow=0, labelcolumn=0, labelrowspan=1,
                      labelcolumnspan=1, labelfontsize=10, labelFont="Arial",
                      buttonText="Fulfill", buttonrow=0, buttoncolumn=0,
                      buttonrowspan=1, buttoncolumnspan=1, isProgress=False):
@@ -166,7 +210,9 @@ class Window:  # Define a class that creates windows
 
 
             
-            fulfillButton = Button(newFrame, text=buttonText, font=("Arial", 18))
+            fulfillButton = Button(newFrame, text=buttonText, font=("Arial", 18),
+                                   command=lambda f="data.json", o=labelVar:
+                                   self.fulfill_window(f, o))
             fulfillButton.grid(row=buttonrow, column=buttoncolumn,
                                 rowspan=buttonrowspan,
                                 columnspan=buttoncolumnspan, sticky="nse",
@@ -174,7 +220,31 @@ class Window:  # Define a class that creates windows
             fulfillButton.grid_propagate(False)
 
             return newFrame
-                
+
+        elif isOrder and isProgress and not (isimage or ismenuitems):
+
+            newFrame.config(height=rowspan*40)
+
+
+            newLabel = Label(newFrame, text=labelText, font=("Arial", 18))
+            newLabel.grid(row=labelrow, column=labelcolumn, rowspan=labelrowspan,
+                          columnspan=labelcolumnspan, padx=(0, 10))
+            newLabel.grid_propagate(False)
+
+            
+
+            progressLabel = Label(newFrame, text="In Progress", font=("Arial", 18), fg="Red")
+            progressLabel.grid(row=buttonrow, column=buttoncolumn,
+                                rowspan=buttonrowspan,
+                                columnspan=buttoncolumnspan, sticky="nse",
+                               padx=300)
+            progressLabel.grid_propagate(False)
+
+
+            return newFrame, progressLabel
+
+
+
         elif ismenuitems and not isimage:
             for i in range(0, rowspan):
                 for j in range(0, columnspan):
@@ -249,4 +319,3 @@ class Window:  # Define a class that creates windows
                                 font=("Arial", 10, "bold"), command=self.complete_order)
         completeButton.grid(row=0, column=4, padx=5)
         completeButton.grid_propagate(False)
-
