@@ -21,4 +21,3 @@ tab.create_footer(row=4, column=0, rowspan=1, columnspan=5)
 
 
 tab.window.mainloop()
-
